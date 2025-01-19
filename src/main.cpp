@@ -10,7 +10,7 @@ void setup() {
 	delay(1000);
 
 	Serial.println("Started");
-	pinMode(SW_RD, INPUT_PULLUP);
+	pinMode(SW_PRINTLN, INPUT_PULLUP);
 	pinMode(SW_LD, INPUT_PULLUP);
 	pinMode(SW_BD, INPUT_PULLUP);
 	pinMode(SW_FD, INPUT_PULLUP);
