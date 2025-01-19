@@ -2,8 +2,8 @@
 #define _DEFINE_H_
 #endif
 
-#define READ_DELAY 10
-#define DELAY_BTWN_READ 10
+#define READ_DELAY 5
+#define DELAY_BTWN_READ 5
 
 // MAG/BMP SPI
 #define CS_MAG 10
@@ -44,7 +44,8 @@
 // #define UM_TX 20
 
 // Disable switches
-#define SW_PRINTLN 33 //disable_println_during_run
+// #define SW_RD 33
+#define SW_PRINTLN 33   // disable_println_during_run
 #define SW_LD 34
 #define SW_BD 35
 #define SW_FD 36
@@ -69,3 +70,5 @@
 // IMU Raw -> Roll/Pitch
 #define sqr(x) x * x
 #define hypotenuse(x, y) sqrt(sqr(x) + sqr(y))
+
+// #define PRINT

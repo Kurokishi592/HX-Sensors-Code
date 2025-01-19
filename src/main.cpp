@@ -3,6 +3,8 @@
 #include "define.h"
 #include "functions.h"
 
+int count = 0;
+
 void setup() {
 	Serial.begin(9600);
 	Wire.begin();
@@ -10,6 +12,7 @@ void setup() {
 	delay(1000);
 
 	Serial.println("Started");
+	// pinMode(SW_RD, INPUT_PULLUP);
 	pinMode(SW_PRINTLN, INPUT_PULLUP);
 	pinMode(SW_LD, INPUT_PULLUP);
 	pinMode(SW_BD, INPUT_PULLUP);
@@ -24,29 +27,34 @@ void setup() {
 
   pinMode(RESET, INPUT_PULLUP);
 
-	Serial.println("Pin modes set, checking switches");
+	// Serial.println("Pin modes set, checking switches");
 	checkSW();
-	Serial.println("Switches checked, starting sensors");
+	// Serial.println("Switches checked, starting sensors");
 	sensorStart();
-	Serial.println("Sensor Connected");
+	// Serial.println("Sensor Connected");
 	sensorConn();
-	Serial.println("DONE, setting up CAN");
+	// Serial.println("DONE, setting up CAN");
 	CANSetup();
-	Serial.println("CAN started");
+	// Serial.println("CAN started");
 	delay(100);
-	Serial.println("Flashing LED");
-	
-	delay(100);
-	turnOff();
-	Serial.println("LED Off");
+	// Serial.println("Flashing LED");
 
 	mpuRead();
 	getRollPitch();
 	kalmanSetup();
 }
 
-void loop() {	
-	check_reset();
+void loop() {
+	if (count /= 50) {
+		check_reset_CAN();
+	}
+	if (count /= 500) {
+		sendVC();
+	}
+	if (count == 1000) {
+		count = 0;
+	}
 	allRead();
 	delay(DELAY_BTWN_READ);
+	count ++;
 }

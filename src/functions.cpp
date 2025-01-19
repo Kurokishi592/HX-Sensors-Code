@@ -7,8 +7,18 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BMP280.h>
 #include <Adafruit_INA219.h>
-#include "CAN/Sense_can.h"
+#include "CAN/Sense_new_can.h"
 #include <Kalman.h>
+
+
+// For disabling prints when necessary
+#ifdef PRINT_E
+#define PRINT(x) Serial.print(x)
+#define PRINTLN(x) Serial.println(x)
+#else
+#define PRINT(x)
+#define PRINTLN(x)
+#endif
 
 MS5837 BAR30;
 Adafruit_BMP280 bmp(&Wire2);
@@ -61,6 +71,7 @@ float voltCurr[2] = {9, 9};				// Power monitoring
  * When switch is turned ON, pin goes to GND/LOW (implying OFF)
  */
 void checkSW() {
+	// RD_E = digitalRead(SW_RD);
 	PRINTLN_E = digitalRead(SW_PRINTLN);
 	LD_E = digitalRead(SW_LD);
 	BD_E = digitalRead(SW_BD);
@@ -78,25 +89,29 @@ void checkSW() {
  * Checks the boolean values first before setting up
  */
 void sensorStart() {
+	if (PRINTLN_E) {
+		#define PRINT_E true
+		PRINTLN("Serial is enabled");
+	}
 	if (INA_E) {
 		inaSetup();
-		if (INA_C) { Serial.println("INA setup done");}
+		if (INA_C) { PRINTLN("INA setup done");}
 	}
 	if (BAR_E) {
 		bar30Setup();
-		if (BAR_C) { Serial.println("BAR30 setup done");}
+		if (BAR_C) { PRINTLN("BAR30 setup done");}
 	}
 	if (BMP_E) {
 		bmpSetup();
-		if (BMP_C) { Serial.println("BMP280 setup done");}
+		if (BMP_C) { PRINTLN("BMP280 setup done");}
 	}
 	if (MAG_E) {
 		magSetup();
-		if (MAG_C) { Serial.println("LIS3MDL setup done");}
+		if (MAG_C) { PRINTLN("LIS3MDL setup done");}
 	}
 	if (MPU_E) {
 		mpuSetup();
-		if (MPU_C) { Serial.println("MPU6500 setup done");}
+		if (MPU_C) { PRINTLN("MPU6500 setup done");}
 	}
 }
 
@@ -107,17 +122,17 @@ void sensorStart() {
 void sensorConn() {
 	if (disable_distance) {
 		if (BAR_E && BMP_E && MAG_E && MPU_E && INA_E) {
-			Serial.println("All sensors (less 4x distance) connected");
+			PRINTLN("All sensors (less 4x distance) connected");
 			flash(4, 1, 1);
 		}
 		else if (BAR_E && BMP_E && MAG_E && MPU_E) {
-			Serial.println("All sensors (less 4x distance and power) connected");
+			PRINTLN("All sensors (less 4x distance and power) connected");
   		flash(2, 1, 1);
 		}
 	}
 	else {
 		if (BAR_E && BMP_E && MAG_E && MPU_E && INA_E && LD_E && BD_E && FD_E) {
-			Serial.println("All sensors (incl. 4x distance) connected");
+			PRINTLN("All sensors (incl. 4x distance) connected");
 			flash(7, 1, 1);
 		}
 	}
@@ -129,20 +144,20 @@ void sensorConn() {
 void bar30Setup() {
 	BAR30.setModel(MS5837::MS5837_30BA);
 	BAR30.setFluidDensity(997); // kg/m^3 (freshwater, 1029 for seawater)
-	Serial.println("Starting");
+	PRINTLN("Starting");
 	delay(20);
 	int count = 0;
 	while (!BAR30.init() && count < 10) {
-		Serial.println("BAR30 init failed!");
+		PRINTLN("BAR30 init failed!");
 		count += 1;
 		delay(100);
 	}
 	if (count < 10) {
-		Serial.println("BAR30 connected");
+		PRINTLN("BAR30 connected");
 		BAR_C = true;
 	}
 	else {
-		Serial.println("BAR30 NOT connected");
+		PRINTLN("BAR30 NOT connected");
 	}
 }
 
@@ -152,16 +167,16 @@ void bar30Setup() {
 void bmpSetup() {
 	int count = 0;
 	while (!bmp.begin(0x76) && count < 10) {
-		Serial.println("BMP280 init failed");
+		PRINTLN("BMP280 init failed");
 		count += 1;
 		delay(100);
 	}
 	if (count < 10) {
-		Serial.println("BMP280 connected");
+		PRINTLN("BMP280 connected");
 		BMP_C = true;
 	}
 	else {
-		Serial.println("BMP280 NOT connected");
+		PRINTLN("BMP280 NOT connected");
 	}
 }
 
@@ -171,67 +186,67 @@ void bmpSetup() {
 void magSetup() {
 	int count = 0;
 
-	// Serial.println("Adafruit LIS3MDL test!");
+	// PRINTLN("Adafruit LIS3MDL test!");
 	// Try to initialize!
 	// while (! lis3mdl.begin_I2C() && count < 10) {          // hardware I2C mode, can pass in address & alt Wire
 	// while (! lis3mdl.begin_SPI(LIS3MDL_CS) && count < 10) {  // hardware SPI mode
 	while (!MAG.begin_SPI(CS_MAG, CLK, MISO, MOSI) && count < 10) { // soft SPI
-		Serial.println("Failed to find LIS3MDL chip");
+		PRINTLN("Failed to find LIS3MDL chip");
 		count += 1;
 		delay(100);
 	}
 	if (count < 10) {
-		Serial.println("MAG connected");
+		PRINTLN("MAG connected");
 		MAG_C = true;
 	}
 	else {
-		Serial.println("MAG NOT connected");
+		PRINTLN("MAG NOT connected");
 	}
 
 	if (MAG_C) {
 		MAG.setPerformanceMode(LIS3MDL_ULTRAHIGHMODE);
-		Serial.print("Performance mode set to: ");
+		PRINT("Performance mode set to: ");
 		switch (MAG.getPerformanceMode()) {
-			case LIS3MDL_LOWPOWERMODE: Serial.println("Low"); break;
-			case LIS3MDL_MEDIUMMODE: Serial.println("Medium"); break;
-			case LIS3MDL_HIGHMODE: Serial.println("High"); break;
-			case LIS3MDL_ULTRAHIGHMODE: Serial.println("Ultra-High"); break;
+			case LIS3MDL_LOWPOWERMODE: PRINTLN("Low"); break;
+			case LIS3MDL_MEDIUMMODE: PRINTLN("Medium"); break;
+			case LIS3MDL_HIGHMODE: PRINTLN("High"); break;
+			case LIS3MDL_ULTRAHIGHMODE: PRINTLN("Ultra-High"); break;
 		}
 
 		MAG.setOperationMode(LIS3MDL_CONTINUOUSMODE);
-		Serial.print("Operation mode set to: ");
+		PRINT("Operation mode set to: ");
 		// Single shot mode will complete conversion and go into power down
 		switch (MAG.getOperationMode()) {
-			case LIS3MDL_CONTINUOUSMODE: Serial.println("Continuous"); break;
-			case LIS3MDL_SINGLEMODE: Serial.println("Single mode"); break;
-			case LIS3MDL_POWERDOWNMODE: Serial.println("Power-down"); break;
+			case LIS3MDL_CONTINUOUSMODE: PRINTLN("Continuous"); break;
+			case LIS3MDL_SINGLEMODE: PRINTLN("Single mode"); break;
+			case LIS3MDL_POWERDOWNMODE: PRINTLN("Power-down"); break;
 		}
 
 		MAG.setDataRate(LIS3MDL_DATARATE_155_HZ);
 		// You can check the datarate by looking at the frequency of the DRDY pin
-		Serial.print("Data rate set to: ");
+		PRINT("Data rate set to: ");
 		switch (MAG.getDataRate()) {
-			case LIS3MDL_DATARATE_0_625_HZ: Serial.println("0.625 Hz"); break;
-			case LIS3MDL_DATARATE_1_25_HZ: Serial.println("1.25 Hz"); break;
-			case LIS3MDL_DATARATE_2_5_HZ: Serial.println("2.5 Hz"); break;
-			case LIS3MDL_DATARATE_5_HZ: Serial.println("5 Hz"); break;
-			case LIS3MDL_DATARATE_10_HZ: Serial.println("10 Hz"); break;
-			case LIS3MDL_DATARATE_20_HZ: Serial.println("20 Hz"); break;
-			case LIS3MDL_DATARATE_40_HZ: Serial.println("40 Hz"); break;
-			case LIS3MDL_DATARATE_80_HZ: Serial.println("80 Hz"); break;
-			case LIS3MDL_DATARATE_155_HZ: Serial.println("155 Hz"); break;
-			case LIS3MDL_DATARATE_300_HZ: Serial.println("300 Hz"); break;
-			case LIS3MDL_DATARATE_560_HZ: Serial.println("560 Hz"); break;
-			case LIS3MDL_DATARATE_1000_HZ: Serial.println("1000 Hz"); break;
+			case LIS3MDL_DATARATE_0_625_HZ: PRINTLN("0.625 Hz"); break;
+			case LIS3MDL_DATARATE_1_25_HZ: PRINTLN("1.25 Hz"); break;
+			case LIS3MDL_DATARATE_2_5_HZ: PRINTLN("2.5 Hz"); break;
+			case LIS3MDL_DATARATE_5_HZ: PRINTLN("5 Hz"); break;
+			case LIS3MDL_DATARATE_10_HZ: PRINTLN("10 Hz"); break;
+			case LIS3MDL_DATARATE_20_HZ: PRINTLN("20 Hz"); break;
+			case LIS3MDL_DATARATE_40_HZ: PRINTLN("40 Hz"); break;
+			case LIS3MDL_DATARATE_80_HZ: PRINTLN("80 Hz"); break;
+			case LIS3MDL_DATARATE_155_HZ: PRINTLN("155 Hz"); break;
+			case LIS3MDL_DATARATE_300_HZ: PRINTLN("300 Hz"); break;
+			case LIS3MDL_DATARATE_560_HZ: PRINTLN("560 Hz"); break;
+			case LIS3MDL_DATARATE_1000_HZ: PRINTLN("1000 Hz"); break;
 		}
 		
 		MAG.setRange(LIS3MDL_RANGE_4_GAUSS);
-		Serial.print("Range set to: ");
+		PRINT("Range set to: ");
 		switch (MAG.getRange()) {
-			case LIS3MDL_RANGE_4_GAUSS: Serial.println("+-4 gauss"); break;
-			case LIS3MDL_RANGE_8_GAUSS: Serial.println("+-8 gauss"); break;
-			case LIS3MDL_RANGE_12_GAUSS: Serial.println("+-12 gauss"); break;
-			case LIS3MDL_RANGE_16_GAUSS: Serial.println("+-16 gauss"); break;
+			case LIS3MDL_RANGE_4_GAUSS: PRINTLN("+-4 gauss"); break;
+			case LIS3MDL_RANGE_8_GAUSS: PRINTLN("+-8 gauss"); break;
+			case LIS3MDL_RANGE_12_GAUSS: PRINTLN("+-12 gauss"); break;
+			case LIS3MDL_RANGE_16_GAUSS: PRINTLN("+-16 gauss"); break;
 		}
 
 		MAG.setIntThreshold(500);
@@ -248,12 +263,12 @@ void magSetup() {
 void mpuSetup() {
 	int count = 0;
 	while(!MPU.init() && count < 10){
-		Serial.println("MPU6500 does not respond");
+		PRINTLN("MPU6500 does not respond");
 		delay(100);
 		count += 1;
 	}
 	if (count < 10) {
-		Serial.println("MPU6500 is connected");
+		PRINTLN("MPU6500 is connected");
 		MPU_C = true;
 		MPU.enableGyrDLPF();
 		MPU.setGyrDLPF(MPU6500_DLPF_6);
@@ -265,8 +280,8 @@ void mpuSetup() {
 		mpuCalib();
 	}
 	else if (count > 10) {
-		Serial.println("MPU6500 is NOT connected");
-		Serial.println("I died");
+		PRINTLN("MPU6500 is NOT connected");
+		PRINTLN("I died");
 	}
 }
 
@@ -274,17 +289,18 @@ void mpuSetup() {
  * MPU6500 auto calibration process
  */
 void mpuCalib() {
-	Serial.println("Position you MPU6500 flat and don't move it - calibrating...");
+	PRINTLN("Position you MPU6500 flat and don't move it - calibrating...");
 	delay(1000);
 	MPU.autoOffsets();
-	Serial.println("Done!");
+	PRINTLN("Done!");
 }
 
 /**
  * CAN bus setup process
  */
 void CANSetup() {
-	CAN.Setup_can(9600, 500*1000); //set baudrate for serial monitoring and bitrate for can
+	// CAN.Setup_can(9600, 500*1000); //set baudrate for serial monitoring and bitrate for can
+	CAN.Setup_can(500 * 1000);
 }
 
 /**
@@ -298,21 +314,21 @@ void bar30Read() {
 	depth = BAR30.depth();
 	ext_altitude = BAR30.altitude();
 
-	Serial.print("Pressure: ");
-	Serial.print(ext_pressure); 
-	Serial.println(" mbar");
+	PRINT("Pressure: ");
+	PRINT(ext_pressure); 
+	PRINTLN(" mbar");
 	
-	Serial.print("Temperature: "); 
-	Serial.print(ext_temp); 
-	Serial.println(" deg C");
+	PRINT("Temperature: "); 
+	PRINT(ext_temp); 
+	PRINTLN(" deg C");
 	
-	Serial.print("Depth: "); 
-	Serial.print(depth); 
-	Serial.println(" m");
+	PRINT("Depth: "); 
+	PRINT(depth); 
+	PRINTLN(" m");
 	
-	Serial.print("Altitude: "); 
-	Serial.print(ext_altitude); 
-	Serial.println(" m above mean sea level");
+	PRINT("Altitude: "); 
+	PRINT(ext_altitude); 
+	PRINTLN(" m above mean sea level");
 
 	yawDepth[1] = depth;
 }
@@ -324,10 +340,10 @@ void bmpRead() {
 	int_temp = bmp.readTemperature();
 	int_pressure = bmp.readPressure() / 100;
 	int_altitude = bmp.readAltitude(1013.25);
-	Serial.println("\nBMP280 Reading:");
-	Serial.print("Temperature: "); Serial.print(int_temp); Serial.println(" *C");
-	Serial.print("Pressure: "); Serial.print(int_pressure); Serial.println(" mb");
-	Serial.print("Altitude: ");	Serial.print(int_altitude);	Serial.println(" m");
+	PRINTLN("\nBMP280 Reading:");
+	PRINT("Temperature: "); PRINT(int_temp); PRINTLN(" *C");
+	PRINT("Pressure: "); PRINT(int_pressure); PRINTLN(" mb");
+	PRINT("Altitude: ");	PRINT(int_altitude);	PRINTLN(" m");
 	intPrTp[0] = int_pressure;
 	intPrTp[1] = int_temp;
 }
@@ -341,15 +357,15 @@ void magRead() {
 	magX = MAG.x;
 	magY = MAG.y;
 	magZ = MAG.z;
-	Serial.print("\nMAG Reading:\nX:  "); Serial.print(magX); Serial.print("\tY:  "); Serial.print(magY); Serial.print("\tZ:  "); Serial.println(magZ); 
+	PRINT("\nMAG Reading:\nX:  "); PRINT(magX); PRINT("\tY:  "); PRINT(magY); PRINT("\tZ:  "); PRINTLN(magZ); 
 	/* Or....get a new sensor event, normalized to uTesla */
 	sensors_event_t event; 
 	MAG.getEvent(&event);
 	/* Display the results (magnetic field is measured in uTesla) */
-	Serial.print("X: "); Serial.print(event.magnetic.x);
-	Serial.print("\tY: "); Serial.print(event.magnetic.y); 
-	Serial.print("\tZ: "); Serial.print(event.magnetic.z); 
-	Serial.println(" uTesla ");
+	PRINT("X: "); PRINT(event.magnetic.x);
+	PRINT("\tY: "); PRINT(event.magnetic.y); 
+	PRINT("\tZ: "); PRINT(event.magnetic.z); 
+	PRINTLN(" uTesla ");
 }
 
 /**
@@ -368,36 +384,37 @@ void mpuRead() {
   gyroY = gyr.y;
   gyroZ = gyr.z;
 
-	Serial.print("\nMPU Reading:\nAcceleration in g (x,y,z):\t");
-	Serial.print(accelX); Serial.print("   "); Serial.print(accelY); Serial.print("   "); Serial.println(accelZ);
-	Serial.print("Resultant g: "); Serial.println(resultantG);
+	PRINT("\nMPU Reading:\nAcceleration in g (x,y,z):\t");
+	PRINT(accelX); PRINT("   "); PRINT(accelY); PRINT("   "); PRINTLN(accelZ);
+	PRINT("Resultant g: "); PRINTLN(resultantG);
   
-  Serial.print("Gyroscope data in degrees/s:\t");
-	Serial.print(gyroX); Serial.print("   "); Serial.print(gyroY); Serial.print("   "); Serial.println(gyroZ);
+  PRINT("Gyroscope data in degrees/s:\t");
+	PRINT(gyroX); PRINT("   "); PRINT(gyroY); PRINT("   "); PRINTLN(gyroZ);
 
-	Serial.print("Temperature in °C: ");
-	Serial.println(temp);
+	PRINT("Temperature in °C: ");
+	PRINTLN(temp);
 
-	Serial.println("********************************************");
+	PRINTLN("********************************************");
 }
 
 /**
  * Test function to call all 5 reads
  */
 void allRead() {
-	Serial.println();
-	if (INA_C) { inaReadVoltage(); inaReadCurr(); delay(READ_DELAY);}
+	PRINTLN();
+	// if (INA_C) { inaReadVoltage(); inaReadCurr(); delay(READ_DELAY);}
 	if (BAR_C) { bar30Read(); delay(READ_DELAY);}			
-	if (BMP_C) { bmpRead(); delay(READ_DELAY);}
+	// if (BMP_C) { bmpRead(); delay(READ_DELAY);}
 	if (MAG_C) { magRead(); delay(READ_DELAY);}
 	if (MPU_C) { mpuRead(); getRollPitch(); getRollPitchK(); getYaw(); delay(READ_DELAY);}
 	if (enable_CAN) {
-		Serial.println("-------------- CAN DATA HERE --------------");
-		CAN.IMU_low(rollPitch, 0x13, 10);
-		CAN.IMU_hi_depth(yawDepth, 0x14, 10);
+		// CAN.IMU_low(rollPitch, 0x13, 10);
+		// CAN.IMU_hi_depth(yawDepth, 0x14, 10);
 		// CAN.PHT(intPrTp, 0x16, 10);
-		CAN.VCS(voltCurr, 0x16, 10); 
+		// CAN.VCS(voltCurr, 0x16, 10); 
 		//Might be able to change to 0
+		CAN.send2data(rollPitch, 0x13);
+		CAN.send2data(yawDepth, 0x14);
 	}
 }
 
@@ -448,16 +465,16 @@ void flash(int num, int pin, int speed) {
 void inaSetup() {
 	int count = 0;
 	while (!INA.begin() && count < 10) {
-		Serial.println("INA219 init failed!");
+		PRINTLN("INA219 init failed!");
 		count += 1;
 		delay(100);
 	}
 	if (count < 10) {
-		Serial.println("INA219 connected");
+		PRINTLN("INA219 connected");
 		INA_C = true;
 	}
 	else {
-		Serial.println("INA219 NOT connected");
+		PRINTLN("INA219 NOT connected");
 	}
 }
 
@@ -466,8 +483,8 @@ void inaSetup() {
  */
 void inaReadVoltage() {
 	voltage = INA.getBusVoltage_V();
-	Serial.print("Clean Battery Voltage:\t");
-	Serial.println(voltage);
+	PRINT("Clean Battery Voltage:\t"); PRINTLN(voltage);
+	voltCurr[0] = voltage;
 }
 
 /**
@@ -475,8 +492,8 @@ void inaReadVoltage() {
  */
 void inaReadCurr() {
   current = INA.getCurrent_mA();
-  Serial.print("Clean Battery Current:\t");
-  Serial.println(current);
+  PRINT("Clean Battery Current:\t"); PRINTLN(current);
+	voltCurr[1] = current;
 }
 
 /**
@@ -484,8 +501,16 @@ void inaReadCurr() {
  */
 void inaReadPwr() {
   float bus_pwr = INA.getPower_mW();
-  Serial.print("Clean Battery Power:\t");
-  Serial.println(bus_pwr);
+  PRINT("Clean Battery Power:\t"); PRINTLN(bus_pwr);
+}
+
+/**
+ * Send power monitoring data
+ */
+void sendVC() {
+	inaReadVoltage();
+	inaReadCurr();
+	CAN.send2data(voltCurr, 0x16);
 }
 
 /**
@@ -496,33 +521,40 @@ void reboot() {
 }
 
 /**
- * Check software reset pin
+ * Check hardware pin for software reset
  */
-void check_reset() {
+void check_reset_pin() {
   if (digitalRead(RESET) == LOW) {
     reboot();
   }
 }
 
 /**
+ * Check CAN for software reset
+ */
+void check_reset_CAN() {
+	CAN.SF_reset();
+}
+
+/**
  * IMU data to roll/pitch
  */
 void getRollPitch() {
-  Serial.print("Raw AccelXYZ:\t");
-  Serial.print(accelX); Serial.print("\t");
-  Serial.print(accelY); Serial.print("\t");
-  Serial.println(accelZ);
-  Serial.print("Raw GyroXYZ:\t");
-  Serial.print(gyroX); Serial.print("\t");
-  Serial.print(gyroY); Serial.print("\t");
-  Serial.println(gyroZ);
+  PRINT("Raw AccelXYZ:\t");
+  PRINT(accelX); PRINT("\t");
+  PRINT(accelY); PRINT("\t");
+  PRINTLN(accelZ);
+  PRINT("Raw GyroXYZ:\t");
+  PRINT(gyroX); PRINT("\t");
+  PRINT(gyroY); PRINT("\t");
+  PRINTLN(gyroZ);
 	
   roll = atan((double)accelY / hypotenuse((double)accelX, (double)accelZ)) * RAD_TO_DEG;
   pitch = atan2((double)-accelX, (double)accelZ) * RAD_TO_DEG;
-  Serial.print("  Roll: ");
-  Serial.print(roll);
-  Serial.print("\t  Pitch: ");
-  Serial.println(pitch);
+  PRINT("  Roll: ");
+  PRINT(roll);
+  PRINT("\t  Pitch: ");
+  PRINTLN(pitch);
   //rollPitch[0] = roll;
   //rollPitch[1] = pitch;
 }
@@ -546,10 +578,10 @@ void getRollPitchK() {
 	timer = micros();
 	kalRoll = kalmanX.getAngle(roll, gyroX, dt);
 	kalPitch = kalmanY.getAngle(pitch, gyroY, dt);
-	Serial.print("K Roll: ");
-	Serial.print(kalRoll);
-	Serial.print("\tK Pitch: ");
-	Serial.println(kalPitch);
+	PRINT("K Roll: ");
+	PRINT(kalRoll);
+	PRINT("\tK Pitch: ");
+	PRINTLN(kalPitch);
 	rollPitch[0] = kalRoll;
 	rollPitch[1] = kalPitch;
 }
@@ -571,9 +603,9 @@ void getYaw() {
 	yawDepth[0] = yaw;
 }
 
-/* 
-	Output the magnatometer values to the serial monitor for calibration purpose.
-*/
+/**
+ * Output the magnatometer values to the serial monitor for calibration purpose.
+ */
 void magCal_withGUI()
 {
 	MAG.read();// get X Y and Z data at once
@@ -585,18 +617,21 @@ void magCal_withGUI()
 	sensors_event_t event; 
 	MAG.getEvent(&event);
 	
-	Serial.print("Raw:0,0,0,0,0,0,");
-	Serial.print(int(event.magnetic.x*10)); Serial.print(",");
-	Serial.print(int(event.magnetic.y*10)); Serial.print(",");
-	Serial.print(int(event.magnetic.z*10)); Serial.println("");
+	PRINT("Raw:0,0,0,0,0,0,");
+	PRINT(int(event.magnetic.x*10)); PRINT(",");
+	PRINT(int(event.magnetic.y*10)); PRINT(",");
+	PRINT(int(event.magnetic.z*10)); PRINTLN("");
 
 	// unified data
-	Serial.print("Uni:0,0,0,0,0,0,");
-	Serial.print(event.magnetic.x); Serial.print(",");
-	Serial.print(event.magnetic.y); Serial.print(",");
-	Serial.print(event.magnetic.z); Serial.println("");
+	PRINT("Uni:0,0,0,0,0,0,");
+	PRINT(event.magnetic.x); PRINT(",");
+	PRINT(event.magnetic.y); PRINT(",");
+	PRINT(event.magnetic.z); PRINTLN("");
 }
 
+/**
+ * For LIS3MDL calibration
+ */
 // void magCal_withoutGUI()
 // {
 // 	MAG.read();// get X Y and Z data at once

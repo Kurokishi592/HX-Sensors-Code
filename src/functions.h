@@ -43,10 +43,12 @@ void inaSetup();
 void inaReadVoltage();
 void inaReadCurr();
 void inaReadPwr();
+void sendVC();
 
 // Software Reset
 void reboot();
-void check_reset();
+void check_reset_pin();
+void check_reset_CAN();
 
 // IMU Conversion
 void getRollPitch();
