@@ -2,8 +2,8 @@
 #define _DEFINE_H_
 #endif
 
-#define READ_DELAY 5
-#define DELAY_BTWN_READ 5
+#define READ_DELAY 0
+#define DELAY_BTWN_READ 0
 
 // MAG/BMP SPI
 #define CS_MAG 10
@@ -45,9 +45,9 @@
 
 // Disable switches
 // #define SW_RD 33
-#define SW_PRINTLN 33   // disable_println_during_run
-#define SW_LD 34
-#define SW_BD 35
+#define SW_BROKEN 33   
+#define SW_PRINTLN 34    // disable_println_during_run
+#define SW_SDLOG 35     // disable_sd_logging
 #define SW_FD 36
 #define SW_BAR 37
 #define SW_BMP 38

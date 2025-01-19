@@ -14,8 +14,8 @@ void setup() {
 	Serial.println("Started");
 	// pinMode(SW_RD, INPUT_PULLUP);
 	pinMode(SW_PRINTLN, INPUT_PULLUP);
-	pinMode(SW_LD, INPUT_PULLUP);
-	pinMode(SW_BD, INPUT_PULLUP);
+	pinMode(SW_SDLOG, INPUT_PULLUP);
+	//pinMode(SW_BD, INPUT_PULLUP); wait for it to be fized
 	pinMode(SW_FD, INPUT_PULLUP);
 	pinMode(SW_BAR, INPUT_PULLUP);
 	pinMode(SW_BMP, INPUT_PULLUP);
@@ -25,7 +25,7 @@ void setup() {
 	pinMode(IND_1, OUTPUT);
 	// pinMode(IND_2, OUTPUT);
 
-  pinMode(RESET, INPUT_PULLUP);
+  	pinMode(RESET, INPUT_PULLUP);
 
 	// Serial.println("Pin modes set, checking switches");
 	checkSW();
@@ -36,15 +36,18 @@ void setup() {
 	// Serial.println("DONE, setting up CAN");
 	CANSetup();
 	// Serial.println("CAN started");
+	setupSD();
+	logToSD("HELLO");
+	// Serial.println("SDLOG is enabled");
 	delay(100);
 	// Serial.println("Flashing LED");
-
 	mpuRead();
 	getRollPitch();
 	kalmanSetup();
 }
 
 void loop() {
+	
 	if (count /= 50) {
 		check_reset_CAN();
 	}
@@ -57,4 +60,6 @@ void loop() {
 	allRead();
 	delay(DELAY_BTWN_READ);
 	count ++;
+
+	Serial.println("Looping"); //For me to count number of loops
 }

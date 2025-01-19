@@ -61,4 +61,8 @@ void getYaw();
 // Mag Calibration  
 void magCal_withGUI();
 
+// SD Card Setup
+void setupSD();
+void logToSD(const char* message);
+
 #endif
