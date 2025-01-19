@@ -1,0 +1,41 @@
+#ifndef DEFINE_H
+#define DEFINE_H
+#endif
+
+// MAG/BMP SPI
+#define CS_MAG 10
+#define CS_BMP 36
+#define MOSI 11
+#define MISO 12
+#define CLK 13
+
+// MPU I2C
+#define MPU_SDA 18
+#define MPU_SCL 19
+#define MPU6500_ADDR 0x68
+
+// BAR30
+#define BAR_SDA 25
+#define BAR_SCL 24
+
+// CAN Bus
+#define CAN_RX 30
+#define CAN_TX 31
+
+// Distance Sensor UARTs
+// Left
+#define DL_RX 0
+#define DL_TX 1
+// Right
+#define DR_RX 7
+#define DR_TX 8
+// Front
+#define DF_RX 16
+#define DF_TX 17
+// Back
+#define DB_RX 15
+#define DB_TX 14
+
+// UM7 (unused)
+// #define UM_RX 21
+// #define UM_TX 20
