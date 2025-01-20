@@ -7,7 +7,7 @@ const ACANPrimaryFilter filters[] = { //can just add on if any more filters need
 void Sense_can :: Setup_can(int bitrate){
   pinMode (LED_BUILTIN, OUTPUT) ;
   ACAN_T4_Settings settings (bitrate) ; // 250 kbit/s
-  const uint32_t errorCode = ACAN_T4::can1.begin (settings) ;
+  const uint32_t errorCode = ACAN_T4::can1.begin (settings, filters, 1) ;
   if (0 == errorCode) {
     digitalWrite(LED_BUILTIN, HIGH);
   }else{
