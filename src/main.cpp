@@ -47,19 +47,37 @@ void setup() {
 }
 
 void loop() {
-	
-	if (count /= 50) {
-		check_reset_CAN();
-	}
-	if (count /= 500) {
-		sendVC();
-	}
-	if (count == 1000) {
-		count = 0;
-	}
-	allRead();
-	delay(DELAY_BTWN_READ);
-	count ++;
+    if (count % 50 == 0) {
+        check_reset_CAN();
+    }
+    if (count % 500 == 0) {
+        sendVC();
+    }
+    if (count == 1000) {
+        count = 0;
+    }
+    allRead();
+    delay(DELAY_BTWN_READ);
+    count++;
 
-	Serial.println("Looping"); //For me to count number of loops
+    Serial.println("Looping"); // For me to count number of loops
 }
+
+
+// void loop() {
+	
+// 	if (count /= 50) {
+// 		check_reset_CAN();
+// 	}
+// 	if (count /= 500) {
+// 		sendVC();
+// 	}
+// 	if (count == 1000) {
+// 		count = 0;
+// 	}
+// 	allRead();
+// 	delay(DELAY_BTWN_READ);
+// 	count ++;
+
+// 	Serial.println("Looping"); //For me to count number of loops
+// }

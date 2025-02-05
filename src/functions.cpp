@@ -535,6 +535,8 @@ void allRead()
 	{
 		magRead();
 		delay(READ_DELAY);
+		//magCal_withGUI();
+		//delay(READ_DELAY);
 	}
 	if (MPU_C)
 	{
@@ -777,10 +779,10 @@ void magCal_withGUI()
 	MAG.getEvent(&event);
 
 	PRINTLN("Raw:0,0,0,0,0,0," + String(int(event.magnetic.x * 10)) + "," + String(int(event.magnetic.y * 10)) + "," + String(int(event.magnetic.z * 10)) + "");
-	LOGLN(("Raw:0,0,0,0,0,0," + String(int(event.magnetic.x * 10)) + "," + String(int(event.magnetic.y * 10)) + "," + String(int(event.magnetic.z * 10))).c_str());
+	logToSD(("Raw:0,0,0,0,0,0," + String(int(event.magnetic.x * 10)) + "," + String(int(event.magnetic.y * 10)) + "," + String(int(event.magnetic.z * 10))).c_str());
 
 	PRINTLN("Uni:0,0,0,0,0,0," + String(event.magnetic.x) + "," + String(event.magnetic.y) + "," + String(event.magnetic.z) + "");\
-	LOGLN(("Uni:0,0,0,0,0,0," + String(event.magnetic.x) + "," + String(event.magnetic.y) + "," + String(event.magnetic.z)).c_str());
+	logToSD(("Uni:0,0,0,0,0,0," + String(event.magnetic.x) + "," + String(event.magnetic.y) + "," + String(event.magnetic.z)).c_str());
 }
 
 void setupSD()
