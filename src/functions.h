@@ -57,6 +57,7 @@ void getRollPitchK();
 
 // Mag Conversion
 void getYaw();
+void getBetterYaw();
 
 // Mag Calibration  
 void magCal_withGUI();

@@ -7,18 +7,23 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BMP280.h>
 #include <Adafruit_INA219.h>
+//#include <Adafruit_AHRS.h>
 #include "CAN/Sense_new_can.h"
 #include <Kalman.h>
-#include <SD.h>
+//#include <SD.h>
 #include <SPI.h>
 #include <string>
+
+
 
 // For disabling prints when necessary
 #define PRINT(x) if (PRINTLN_E) Serial.print(x)
 #define PRINTLN(x) if (PRINTLN_E) Serial.println(x)
 
 // For disabling SD logging when necessary
-#define LOGLN(x) if (SDLOG_E) logToSD(x)
+//#define LOGLN(x) if (SDLOG_E) logToSD(x)
+#define LOGLN(x) if (SDLOG_E) 
+
 
 MS5837 BAR30;
 Adafruit_BMP280 bmp(&Wire2);
@@ -28,7 +33,7 @@ Sense_can CAN;
 Adafruit_INA219 INA;
 
 // FOR SD Card
-const int chipSelect = BUILTIN_SDCARD;
+//const int chipSelect = BUILTIN_SDCARD;
 
 bool PRINTLN_E = false, SDLOG_E = false, BD_E = false, FD_E = false, BAR_E = false, BMP_E = false, MAG_E = false, MPU_E = false, INA_E = false;
 bool RD_C = false, LD_C = false, BD_C = false, FD_C = false, BAR_C = false, BMP_C = false, MAG_C = false, MPU_C = false, INA_C = false;
@@ -352,6 +357,7 @@ void magSetup()
 							false,				// don't latch
 							true);				// enabled!
 	}
+	
 }
 
 /**
@@ -469,9 +475,10 @@ void magRead()
 {
 	MAG.read(); // get X Y and Z data at once
 	// Then print out the raw data
-	magX = MAG.x;
-	magY = MAG.y;
-	magZ = MAG.z;
+	// magX = MAG.x;
+	// magY = MAG.y;
+	// magZ = MAG.z;
+	
 
 	PRINTLN("\nMAG Reading:\nX: " + String(magX) + "\tY: " + String(magY) + "\tZ: " + String(magZ));
 	LOGLN(("\nMAG Reading:\nX: " + String(magX) + "\tY: " + String(magY) + "\tZ: " + String(magZ)).c_str());
@@ -481,9 +488,12 @@ void magRead()
 	MAG.getEvent(&event);
 	/* Display the results (magnetic field is measured in uTesla) */
 	
+	magX = event.magnetic.x - 1.19;
+	magY = event.magnetic.y + 24.93;
+	magZ = event.magnetic.z + 12.72;
+
 	PRINTLN("X: " + String(event.magnetic.x) + "\tY: " + String(event.magnetic.y) + "\tZ: " + String(event.magnetic.z) + " uTesla");
 	LOGLN(("X: " + String(event.magnetic.x) + "\tY: " + String(event.magnetic.y) + "\tZ: " + String(event.magnetic.z) + " uTesla").c_str());
-
 }
 
 /**
@@ -535,8 +545,8 @@ void allRead()
 	{
 		magRead();
 		delay(READ_DELAY);
-		//magCal_withGUI();
-		//delay(READ_DELAY);
+		magCal_withGUI();
+		delay(READ_DELAY);
 	}
 	if (MPU_C)
 	{
@@ -544,6 +554,7 @@ void allRead()
 		getRollPitch();
 		getRollPitchK();
 		getYaw();
+		//getBetterYaw();
 		delay(READ_DELAY);
 	}
 	if (enable_CAN)
@@ -762,7 +773,17 @@ void getYaw()
 	double mZ = magZ - aZ;
 	yaw = atan2(mX, mY) * 180 / M_PI;
 	yawDepth[0] = yaw;
+	PRINTLN("Yaw: " + String(yaw));
 }
+
+// void getBetterYaw()
+// {
+// 	Adafruit_Madgwick filter;  // faster than NXP
+// 	filter.begin(100);
+// 	filter.update(gyroX,gyroY,gyroZ, accelX, accelY, accelZ, magX, magY, magZ);
+// 	yaw = filter.getYaw();
+// 	PRINTLN("Better Yaw: " + String(yaw));
+// }
 
 /**
  * Output the magnatometer values to the serial monitor for calibration purpose.
@@ -778,35 +799,36 @@ void magCal_withGUI()
 	sensors_event_t event;
 	MAG.getEvent(&event);
 
-	PRINTLN("Raw:0,0,0,0,0,0," + String(int(event.magnetic.x * 10)) + "," + String(int(event.magnetic.y * 10)) + "," + String(int(event.magnetic.z * 10)) + "");
-	logToSD(("Raw:0,0,0,0,0,0," + String(int(event.magnetic.x * 10)) + "," + String(int(event.magnetic.y * 10)) + "," + String(int(event.magnetic.z * 10))).c_str());
+	Serial.println("Raw:0,0,0,0,0,0," + String(int((event.magnetic.x-1.19) * 10)) + "," + String(int((event.magnetic.y+24.93) * 10)) + "," + String(int((event.magnetic.z+12.72) * 10)) + "");
+	//logToSD(("Raw:0,0,0,0,0,0," + String(int(event.magnetic.x * 10)) + "," + String(int(event.magnetic.y * 10)) + "," + String(int(event.magnetic.z * 10))).c_str());
 
-	PRINTLN("Uni:0,0,0,0,0,0," + String(event.magnetic.x) + "," + String(event.magnetic.y) + "," + String(event.magnetic.z) + "");\
-	logToSD(("Uni:0,0,0,0,0,0," + String(event.magnetic.x) + "," + String(event.magnetic.y) + "," + String(event.magnetic.z)).c_str());
+	Serial.println("Uni:0,0,0,0,0,0," + String(event.magnetic.x-1.19) + "," + String(event.magnetic.y+24.93) + "," + String(event.magnetic.z+12.72) + "");\
+	//logToSD(("Uni:0,0,0,0,0,0," + String(event.magnetic.x) + "," + String(event.magnetic.y) + "," + String(event.magnetic.z)).c_str());
+
 }
 
-void setupSD()
-{
-	if (!SD.begin(chipSelect))
-	{
-		PRINTLN("SD card initialization failed!");
-		return;
-	}
-}
+// void setupSD()
+// {
+// 	if (!SD.begin(chipSelect))
+// 	{
+// 		PRINTLN("SD card initialization failed!");
+// 		return;
+// 	}
+// }
 
-void logToSD(const char* message)
-{
-	File logFile;
+// void logToSD(const char* message)
+// {
+// 	File logFile;
 
-	logFile = SD.open("log.txt", FILE_WRITE);
-	if (logFile)
-	{
-		logFile.println(message);
-		logFile.close();
-		PRINTLN("Message logged to SD card");
-	}
-	else
-	{
-		PRINTLN("Error opening log file");
-	}
-}
+// 	logFile = SD.open("log.txt", FILE_WRITE);
+// 	if (logFile)
+// 	{
+// 		logFile.println(message);
+// 		logFile.close();
+// 		PRINTLN("Message logged to SD card");
+// 	}
+// 	else
+// 	{
+// 		PRINTLN("Error opening log file");
+// 	}
+// }

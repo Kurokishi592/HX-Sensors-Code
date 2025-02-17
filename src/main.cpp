@@ -36,8 +36,8 @@ void setup() {
 	// Serial.println("DONE, setting up CAN");
 	CANSetup();
 	// Serial.println("CAN started");
-	setupSD();
-	logToSD("HELLO");
+	//setupSD();
+	//logToSD("HELLO");
 	// Serial.println("SDLOG is enabled");
 	delay(100);
 	// Serial.println("Flashing LED");
@@ -60,24 +60,5 @@ void loop() {
     delay(DELAY_BTWN_READ);
     count++;
 
-    Serial.println("Looping"); // For me to count number of loops
+    //Serial.println("Looping"); // For me to count number of loops
 }
-
-
-// void loop() {
-	
-// 	if (count /= 50) {
-// 		check_reset_CAN();
-// 	}
-// 	if (count /= 500) {
-// 		sendVC();
-// 	}
-// 	if (count == 1000) {
-// 		count = 0;
-// 	}
-// 	allRead();
-// 	delay(DELAY_BTWN_READ);
-// 	count ++;
-
-// 	Serial.println("Looping"); //For me to count number of loops
-// }
