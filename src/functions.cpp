@@ -7,13 +7,12 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BMP280.h>
 #include <Adafruit_INA219.h>
-//#include <Adafruit_AHRS.h>
+#include <Adafruit_AHRS.h>
 #include "CAN/Sense_new_can.h"
 #include <Kalman.h>
 //#include <SD.h>
 #include <SPI.h>
 #include <string>
-
 
 
 // For disabling prints when necessary
@@ -31,6 +30,8 @@ Adafruit_LIS3MDL MAG;
 MPU6500_WE MPU = MPU6500_WE(&Wire2, MPU6500_ADDR);
 Sense_can CAN;
 Adafruit_INA219 INA;
+Adafruit_Mahony filter;  // faster than NXP
+
 
 // FOR SD Card
 //const int chipSelect = BUILTIN_SDCARD;
@@ -357,7 +358,8 @@ void magSetup()
 							false,				// don't latch
 							true);				// enabled!
 	}
-	
+
+	filter.begin(100); // This is the getBetterYaw filter object begin func
 }
 
 /**
@@ -553,8 +555,8 @@ void allRead()
 		mpuRead();
 		getRollPitch();
 		getRollPitchK();
-		getYaw();
-		//getBetterYaw();
+		//getYaw();
+		getBetterYaw();
 		delay(READ_DELAY);
 	}
 	if (enable_CAN)
@@ -776,14 +778,13 @@ void getYaw()
 	PRINTLN("Yaw: " + String(yaw));
 }
 
-// void getBetterYaw()
-// {
-// 	Adafruit_Madgwick filter;  // faster than NXP
-// 	filter.begin(100);
-// 	filter.update(gyroX,gyroY,gyroZ, accelX, accelY, accelZ, magX, magY, magZ);
-// 	yaw = filter.getYaw();
-// 	PRINTLN("Better Yaw: " + String(yaw));
-// }
+void getBetterYaw()
+{
+	
+	filter.update(gyroX,gyroY,gyroZ, accelX, accelY, accelZ, magX, magY, magZ);
+	yaw = filter.getYaw();
+	PRINTLN("Better Yaw: " + String(yaw));
+}
 
 /**
  * Output the magnatometer values to the serial monitor for calibration purpose.
