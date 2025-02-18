@@ -25,7 +25,7 @@ void setup() {
 	pinMode(IND_1, OUTPUT);
 	// pinMode(IND_2, OUTPUT);
 
-  	pinMode(RESET, INPUT_PULLUP);
+	pinMode(RESET, INPUT_PULLUP);
 
 	// Serial.println("Pin modes set, checking switches");
 	checkSW();
@@ -47,18 +47,18 @@ void setup() {
 }
 
 void loop() {
-    if (count % 50 == 0) {
-        check_reset_CAN();
-    }
-    if (count % 500 == 0) {
-        sendVC();
-    }
-    if (count == 1000) {
-        count = 0;
-    }
-    allRead();
-    delay(DELAY_BTWN_READ);
-    count++;
+	if (count % 50 == 0) {
+		check_reset_CAN();
+	}
+	// if (count % 500 == 0) {
+	// 	sendVC();
+	// }
+	if (count == 1000) {
+		count = 0;
+	}
+	allRead();
+	delay(DELAY_BTWN_READ);
+	count++;
 
-    //Serial.println("Looping"); // For me to count number of loops
+	//Serial.println("Looping"); // For me to count number of loops
 }

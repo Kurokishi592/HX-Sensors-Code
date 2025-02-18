@@ -30,7 +30,9 @@ Adafruit_LIS3MDL MAG;
 MPU6500_WE MPU = MPU6500_WE(&Wire2, MPU6500_ADDR);
 Sense_can CAN;
 Adafruit_INA219 INA;
-Adafruit_Mahony filter;  // faster than NXP
+// Adafruit_Mahony filter;  // faster than NXP
+Adafruit_Madgwick filter;
+// Adafruit_NXPSensorFusion filter;
 
 
 // FOR SD Card
@@ -359,7 +361,7 @@ void magSetup()
 							true);				// enabled!
 	}
 
-	filter.begin(100); // This is the getBetterYaw filter object begin func
+	filter.begin(1); // This is the getBetterYaw filter object begin func
 }
 
 /**
@@ -780,10 +782,14 @@ void getYaw()
 
 void getBetterYaw()
 {
-	
 	filter.update(gyroX,gyroY,gyroZ, accelX, accelY, accelZ, magX, magY, magZ);
 	yaw = filter.getYaw();
+	yawDepth[0] = yaw;
 	PRINTLN("Better Yaw: " + String(yaw));
+	double roll1 = filter.getRoll();
+	double pitch1 = filter.getPitch();
+	PRINTLN("Better Roll: " + String(roll1));
+	PRINTLN("Better Pitch: " + String(pitch1));
 }
 
 /**
@@ -800,10 +806,10 @@ void magCal_withGUI()
 	sensors_event_t event;
 	MAG.getEvent(&event);
 
-	Serial.println("Raw:0,0,0,0,0,0," + String(int((event.magnetic.x-1.19) * 10)) + "," + String(int((event.magnetic.y+24.93) * 10)) + "," + String(int((event.magnetic.z+12.72) * 10)) + "");
+	PRINTLN("Raw:0,0,0,0,0,0," + String(int((event.magnetic.x-1.19) * 10)) + "," + String(int((event.magnetic.y+24.93) * 10)) + "," + String(int((event.magnetic.z+12.72) * 10)) + "");
 	//logToSD(("Raw:0,0,0,0,0,0," + String(int(event.magnetic.x * 10)) + "," + String(int(event.magnetic.y * 10)) + "," + String(int(event.magnetic.z * 10))).c_str());
 
-	Serial.println("Uni:0,0,0,0,0,0," + String(event.magnetic.x-1.19) + "," + String(event.magnetic.y+24.93) + "," + String(event.magnetic.z+12.72) + "");\
+	PRINTLN("Uni:0,0,0,0,0,0," + String(event.magnetic.x-1.19) + "," + String(event.magnetic.y+24.93) + "," + String(event.magnetic.z+12.72) + "");\
 	//logToSD(("Uni:0,0,0,0,0,0," + String(event.magnetic.x) + "," + String(event.magnetic.y) + "," + String(event.magnetic.z)).c_str());
 
 }
