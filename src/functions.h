@@ -66,4 +66,6 @@ void magCal_withGUI();
 void setupSD();
 void logToSD(const char* message);
 
+void printVisualisation();
+
 #endif

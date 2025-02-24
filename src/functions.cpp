@@ -10,19 +10,21 @@
 #include <Adafruit_AHRS.h>
 #include "CAN/Sense_new_can.h"
 #include <Kalman.h>
-//#include <SD.h>
 #include <SPI.h>
 #include <string>
-
+#include <Sdfat.h>
 
 // For disabling prints when necessary
-#define PRINT(x) if (PRINTLN_E) Serial.print(x)
-#define PRINTLN(x) if (PRINTLN_E) Serial.println(x)
+#define PRINT(x)   \
+	if (PRINTLN_E) \
+	Serial.print(x)
+#define PRINTLN(x) \
+	if (PRINTLN_E) \
+	Serial.println(x)
 
 // For disabling SD logging when necessary
-//#define LOGLN(x) if (SDLOG_E) logToSD(x)
-#define LOGLN(x) if (SDLOG_E) 
-
+// #define LOGLN(x) if (SDLOG_E) logToSD(x)
+#define LOGLN(x) if (SDLOG_E)
 
 MS5837 BAR30;
 Adafruit_BMP280 bmp(&Wire2);
@@ -30,13 +32,11 @@ Adafruit_LIS3MDL MAG;
 MPU6500_WE MPU = MPU6500_WE(&Wire2, MPU6500_ADDR);
 Sense_can CAN;
 Adafruit_INA219 INA;
-// Adafruit_Mahony filter;  // faster than NXP
 Adafruit_Madgwick filter;
+// Adafruit_Mahony filter;  // faster than NXP
 // Adafruit_NXPSensorFusion filter;
 
-
-// FOR SD Card
-//const int chipSelect = BUILTIN_SDCARD;
+const int chipSelect = 10;
 
 bool PRINTLN_E = false, SDLOG_E = false, BD_E = false, FD_E = false, BAR_E = false, BMP_E = false, MAG_E = false, MPU_E = false, INA_E = false;
 bool RD_C = false, LD_C = false, BD_C = false, FD_C = false, BAR_C = false, BMP_C = false, MAG_C = false, MPU_C = false, INA_C = false;
@@ -361,7 +361,7 @@ void magSetup()
 							true);				// enabled!
 	}
 
-	filter.begin(1); // This is the getBetterYaw filter object begin func
+	filter.begin(10); // This is the getBetterYaw filter object begin func
 }
 
 /**
@@ -428,31 +428,16 @@ void bar30Read()
 	depth = BAR30.depth();
 	ext_altitude = BAR30.altitude();
 
-	// PRINT("Pressure: ");
-	// PRINT(ext_pressure);
-	// PRINTLN(" mbar");
-
-	// PRINT("Temperature: ");
-	// PRINT(ext_temp);
-	// PRINTLN(" deg C");
-
-	// PRINT("Depth: ");
-	// PRINT(depth);
-	// PRINTLN(" m");
-
-	// PRINT("Altitude: ");
-	// PRINT(ext_altitude);
-	// PRINTLN(" m above mean sea level");
-
 	PRINTLN("Pressure: " + String(ext_pressure) + " mbar\n" +
-        "Temperature: " + String(ext_temp) + " deg C\n" +
-        "Depth: " + String(depth) + " m\n" +
-        "Altitude: " + String(ext_altitude) + " m above mean sea level");
-	
+			"Temperature: " + String(ext_temp) + " deg C\n" +
+			"Depth: " + String(depth) + " m\n" +
+			"Altitude: " + String(ext_altitude) + " m above mean sea level");
+
 	LOGLN(("Pressure: " + String(ext_pressure) + " mbar\n" +
-		"Temperature: " + String(ext_temp) + " deg C\n" +
-		"Depth: " + String(depth) + " m\n" +
-		"Altitude: " + String(ext_altitude) + " m above mean sea level").c_str());
+		   "Temperature: " + String(ext_temp) + " deg C\n" +
+		   "Depth: " + String(depth) + " m\n" +
+		   "Altitude: " + String(ext_altitude) + " m above mean sea level")
+			  .c_str());
 
 	yawDepth[1] = depth;
 }
@@ -482,7 +467,6 @@ void magRead()
 	// magX = MAG.x;
 	// magY = MAG.y;
 	// magZ = MAG.z;
-	
 
 	PRINTLN("\nMAG Reading:\nX: " + String(magX) + "\tY: " + String(magY) + "\tZ: " + String(magZ));
 	LOGLN(("\nMAG Reading:\nX: " + String(magX) + "\tY: " + String(magY) + "\tZ: " + String(magZ)).c_str());
@@ -517,10 +501,9 @@ void mpuRead()
 	gyroY = gyr.y;
 	gyroZ = gyr.z;
 
-
 	PRINTLN("\nMPU Reading:\nAcceleration in g (x,y,z):\t" + String(accelX) + "   " + String(accelY) + "   " + String(accelZ) + "\nResultant g: " + String(resultantG));
 	LOGLN(("\nMPU Reading:\nAcceleration in g (x,y,z):\t" + String(accelX) + "   " + String(accelY) + "   " + String(accelZ) + "\nResultant g: " + String(resultantG)).c_str());
-	
+
 	PRINTLN("Gyroscope data in degrees/s:\t" + String(gyroX) + "   " + String(gyroY) + "   " + String(gyroZ));
 	LOGLN(("Gyroscope data in degrees/s:\t" + String(gyroX) + "   " + String(gyroY) + "   " + String(gyroZ)).c_str());
 
@@ -529,7 +512,6 @@ void mpuRead()
 
 	PRINTLN("********************************************");
 	LOGLN("********************************************");
-
 }
 
 /**
@@ -571,6 +553,7 @@ void allRead()
 		CAN.send2data(rollPitch, 0x13);
 		CAN.send2data(yawDepth, 0x14);
 	}
+	//printVisualisation();
 }
 
 /**
@@ -722,10 +705,9 @@ void getRollPitch()
 	PRINTLN("Raw GyroXYZ:\t" + String(gyroX) + "\t" + String(gyroY) + "\t" + String(gyroZ));
 	LOGLN(("Raw GyroXYZ:\t" + String(gyroX) + "\t" + String(gyroY) + "\t" + String(gyroZ)).c_str());
 
-
 	roll = atan((double)accelY / hypotenuse((double)accelX, (double)accelZ)) * RAD_TO_DEG;
 	pitch = atan2((double)-accelX, (double)accelZ) * RAD_TO_DEG;
-	
+
 	PRINTLN("  Roll: " + String(roll) + "\t  Pitch: " + String(pitch));
 	LOGLN(("  Roll: " + String(roll) + "\t  Pitch: " + String(pitch)).c_str());
 
@@ -780,16 +762,48 @@ void getYaw()
 	PRINTLN("Yaw: " + String(yaw));
 }
 
+/**
+ * Using the Adafruit AHRS library to get yaw values
+ */
 void getBetterYaw()
 {
-	filter.update(gyroX,gyroY,gyroZ, accelX, accelY, accelZ, magX, magY, magZ);
+	filter.update(gyroX, gyroY, gyroZ, accelX, accelY, accelZ, magX, magY, magZ);
 	yaw = filter.getYaw();
-	yawDepth[0] = yaw;
+	//double roll1 = filter.getRoll();   // Experiment only
+	//double pitch1 = filter.getPitch(); // Experiment only
+
+	yawDepth[0] = yaw; // Load yaw into CAN array to send out
+
+	// Serial print the yaw, roll and pitch
 	PRINTLN("Better Yaw: " + String(yaw));
-	double roll1 = filter.getRoll();
-	double pitch1 = filter.getPitch();
-	PRINTLN("Better Roll: " + String(roll1));
-	PRINTLN("Better Pitch: " + String(pitch1));
+	//PRINTLN("Better Roll: " + String(roll1));
+	//PRINTLN("Better Pitch: " + String(pitch1));
+}
+
+void printVisualisation()
+{
+	filter.update(gyroX, gyroY, gyroZ, accelX, accelY, accelZ, magX, magY, magZ);
+	float r = filter.getRoll();
+	float p = filter.getPitch();
+	float h = filter.getYaw();
+	Serial.print("Orientation: ");
+	Serial.print(r);
+	Serial.print(", ");
+	Serial.print(p);
+	Serial.print(", ");
+	Serial.println(h);
+
+	float qw, qx, qy, qz;
+	filter.getQuaternion(&qw, &qx, &qy, &qz);
+	Serial.print("Quaternion: ");
+	Serial.print(qw, 4);
+	Serial.print(", ");
+	Serial.print(qx, 4);
+	Serial.print(", ");
+	Serial.print(qy, 4);
+	Serial.print(", ");
+	Serial.println(qz, 4);
+	
 }
 
 /**
@@ -806,12 +820,10 @@ void magCal_withGUI()
 	sensors_event_t event;
 	MAG.getEvent(&event);
 
-	PRINTLN("Raw:0,0,0,0,0,0," + String(int((event.magnetic.x-1.19) * 10)) + "," + String(int((event.magnetic.y+24.93) * 10)) + "," + String(int((event.magnetic.z+12.72) * 10)) + "");
-	//logToSD(("Raw:0,0,0,0,0,0," + String(int(event.magnetic.x * 10)) + "," + String(int(event.magnetic.y * 10)) + "," + String(int(event.magnetic.z * 10))).c_str());
+	PRINTLN("Raw:0,0,0,0,0,0," + String(int((event.magnetic.x - 1.19) * 10)) + "," + String(int((event.magnetic.y + 24.93) * 10)) + "," + String(int((event.magnetic.z + 12.72) * 10)) + "");
+	// logToSD(("Raw:0,0,0,0,0,0," + String(int(event.magnetic.x * 10)) + "," + String(int(event.magnetic.y * 10)) + "," + String(int(event.magnetic.z * 10))).c_str());
 
-	PRINTLN("Uni:0,0,0,0,0,0," + String(event.magnetic.x-1.19) + "," + String(event.magnetic.y+24.93) + "," + String(event.magnetic.z+12.72) + "");\
-	//logToSD(("Uni:0,0,0,0,0,0," + String(event.magnetic.x) + "," + String(event.magnetic.y) + "," + String(event.magnetic.z)).c_str());
-
+	PRINTLN("Uni:0,0,0,0,0,0," + String(event.magnetic.x - 1.19) + "," + String(event.magnetic.y + 24.93) + "," + String(event.magnetic.z + 12.72) + ""); // logToSD(("Uni:0,0,0,0,0,0," + String(event.magnetic.x) + "," + String(event.magnetic.y) + "," + String(event.magnetic.z)).c_str());
 }
 
 // void setupSD()
